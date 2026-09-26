@@ -345,7 +345,7 @@ export function RepoSidebar() {
 
       items.push({
         key: "admin-collaborators",
-        label: "Collaborators",
+        label: "Client logins",
         href: `/${config.owner}/${config.repo}/${encodeURIComponent(config.branch)}/collaborators`,
         icon: <Users className="size-4" />,
       });

@@ -1,16 +1,7 @@
-<svg width="480" height="480" viewBox="0 0 480 480" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    :root {
-      --icon-bg: oklch(0.60 0.13 163);
-      --icon-fg: oklch(0.98 0.02 166);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --icon-bg: oklch(0.70 0.15 162);
-        --icon-fg: oklch(0.26 0.05 173);
-      }
-    }
-  </style>
-  <rect width="480" height="480" rx="96" fill="var(--icon-bg)" />
-  <path d="M60 132C60 92.2355 92.2355 60 132 60H240.177C259.272 60 277.586 67.5857 291.088 81.0883L398.912 188.912C412.414 202.414 420 220.728 420 239.823V348C420 387.764 387.764 420 348 420H132C92.2355 420 60 387.764 60 348V132Z" fill="var(--icon-fg)" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#b0602c"/>
+  <g transform="translate(89,96) scale(5.2)">
+    <path d="M32 3.5C20.13 3.5 10.5 13.13 10.5 25c0 8.02 6.26 17.13 11.51 23.5 3.4 4.13 6.79 7.5 8.19 8.85a2.6 2.6 0 0 0 3.6 0c1.4-1.35 4.79-4.72 8.19-8.85C47.24 42.13 53.5 33.02 53.5 25 53.5 13.13 43.87 3.5 32 3.5Z" fill="#fffdf7"/>
+    <path d="M36.8 14.4v20.9h-6.2V21.9l-3.6 2.2v-5.3l5.6-4.4h4.2Z" fill="#b0602c"/>
+  </g>
 </svg>

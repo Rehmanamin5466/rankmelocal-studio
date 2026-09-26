@@ -1,14 +1,21 @@
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/providers";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Caprasimo, Figtree, JetBrains_Mono } from "next/font/google";
 import { getBaseUrl } from "@/lib/base-url";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const inter = Inter({
+const figtree = Figtree({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-figtree",
+});
+
+// Rank Me Local display face: single weight (400), used for the wordmark only.
+const caprasimo = Caprasimo({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-caprasimo",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -17,13 +24,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 const appUrl = getBaseUrl();
 const socialImage = "/images/social-card.png";
-const description = "The No-Hassle CMS for GitHub";
+const description = "Edit your website content with Rank Me Local";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
   title: {
-    template: "%s | Pages CMS",
-    default: "Pages CMS",
+    template: "%s | Rank Me Local Studio",
+    default: "Rank Me Local Studio",
   },
   description,
   alternates: {
@@ -32,21 +39,21 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: appUrl,
-    siteName: "Pages CMS",
-    title: "Pages CMS",
+    siteName: "Rank Me Local Studio",
+    title: "Rank Me Local Studio",
     description,
     images: [
       {
         url: socialImage,
         width: 1200,
         height: 630,
-        alt: "Pages CMS social card",
+        alt: "Rank Me Local Studio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pages CMS",
+    title: "Rank Me Local Studio",
     description,
     images: [socialImage],
   },
@@ -62,7 +69,8 @@ export default async function RootLayout({
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
-          inter.variable,
+          figtree.variable,
+          caprasimo.variable,
           jetbrainsMono.variable,
         )}
       >

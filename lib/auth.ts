@@ -24,6 +24,13 @@ export const auth = betterAuth({
       },
     },
   },
+  // Client logins: accounts are created by the agency on the Collaborators
+  // screen (lib/actions/client-login.ts), never by public sign-up.
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+    minPasswordLength: 8,
+  },
   account: {
     accountLinking: {
       enabled: true,

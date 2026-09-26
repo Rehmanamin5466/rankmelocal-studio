@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useActionState } from "react";
+import { handleRemoveCollaborator } from "@/lib/actions/collaborator";
 import {
-  handleAddCollaborator,
-  handleRemoveCollaborator,
-  handleResendCollaboratorInvite,
-} from "@/lib/actions/collaborator";
+  handleCreateClientLogin,
+  handleResetClientPassword,
+} from "@/lib/actions/client-login";
+import {
+  CreateClientLoginDialog,
+  ResetPasswordDialog,
+} from "@/components/client-login-dialogs";
 import { useRepoHeader } from "@/components/repo/repo-header-context";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/submit-button";
 import {
   Empty,
   EmptyContent,
@@ -29,15 +32,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,7 +40,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -68,89 +61,6 @@ type AddCollaboratorState = {
   data?: Collaborator[];
 };
 
-function InviteCollaboratorsDialog({
-  owner,
-  repo,
-  state,
-  action,
-  open,
-  onOpenChange,
-  value,
-  onValueChange,
-  disabled,
-  triggerLabel,
-  triggerVariant = "outline",
-  triggerSize = "default",
-}: {
-  owner: string;
-  repo: string;
-  state: AddCollaboratorState;
-  action: (payload: FormData) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  value: string;
-  onValueChange: (value: string) => void;
-  disabled: boolean;
-  triggerLabel?: string;
-  triggerVariant?: "default" | "outline";
-  triggerSize?: "default" | "sm";
-}) {
-  const parsedInviteEmails = useMemo(() => {
-    return Array.from(
-      new Set(
-        value
-          .split(/[\n,]+/)
-          .map((email) => email.trim())
-          .filter(Boolean),
-      ),
-    );
-  }, [value]);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant={triggerVariant} size={triggerSize} disabled={disabled}>
-          {triggerLabel || "Invite"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Invite collaborators</DialogTitle>
-          <DialogDescription>
-            Enter one or multiple email addresses, separated by commas or new
-            lines.
-          </DialogDescription>
-        </DialogHeader>
-        <form action={action} className="space-y-4">
-          <input type="hidden" name="owner" value={owner} />
-          <input type="hidden" name="repo" value={repo} />
-          <Textarea
-            name="emails"
-            placeholder="alice@example.com, bob@example.com"
-            value={value}
-            onChange={(event) => onValueChange(event.target.value)}
-            required
-            rows={6}
-          />
-          {state?.error ? (
-            <p className="text-sm font-medium text-destructive">
-              {state.error}
-            </p>
-          ) : null}
-          <DialogFooter>
-            <SubmitButton
-              type="submit"
-              disabled={parsedInviteEmails.length === 0}
-            >
-              Send invite{parsedInviteEmails.length > 1 ? "s" : ""}
-            </SubmitButton>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function Collaborators({
   owner,
   repo,
@@ -164,11 +74,11 @@ export function Collaborators({
   const [addCollaboratorState, addCollaboratorAction] = useActionState<
     AddCollaboratorState,
     FormData
-  >(handleAddCollaborator, {});
-  const [emails, setEmails] = useState("");
+  >(handleCreateClientLogin, {});
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [removing, setRemoving] = useState<number[]>([]);
   const [resending, setResending] = useState<number[]>([]);
+  const [resetId, setResetId] = useState<number | null>(null);
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | undefined | null>(null);
@@ -240,7 +150,6 @@ export function Collaborators({
           duration: 10000,
         });
       }
-      setEmails("");
       setInviteDialogOpen(false);
     }
   }, [addCollaboratorState, addNewCollaborator]);
@@ -271,22 +180,20 @@ export function Collaborators({
     }
   };
 
-  const handleResendInvite = async (collaboratorId: number) => {
+  const handleResetPassword = async (collaboratorId: number, password: string) => {
     setResending((prev) => [...prev, collaboratorId]);
 
     try {
-      const resent = await handleResendCollaboratorInvite(
-        collaboratorId,
-        owner,
-        repo,
-      );
-      if (resent.error) {
-        toast.error(resent.error);
-      } else {
-        toast.success(resent.message);
+      const result = await handleResetClientPassword(collaboratorId, owner, repo, password);
+      if (result.error) {
+        toast.error(result.error);
+        return false;
       }
+      toast.success(result.message);
+      return true;
     } catch (err: any) {
       toast.error(err.message);
+      return false;
     } finally {
       setResending((prev) => prev.filter((id) => id !== collaboratorId));
     }
@@ -298,7 +205,7 @@ export function Collaborators({
     return (
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h1 className="font-semibold text-lg">Collaborators</h1>
+          <h1 className="font-semibold text-lg">Client logins</h1>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -321,18 +228,13 @@ export function Collaborators({
           </Tooltip>
         </div>
         {showInviteAction ? (
-          <InviteCollaboratorsDialog
+          <CreateClientLoginDialog
             owner={owner}
             repo={repo}
             state={addCollaboratorState}
             action={addCollaboratorAction}
             open={inviteDialogOpen}
             onOpenChange={setInviteDialogOpen}
-            value={emails}
-            onValueChange={setEmails}
-            disabled={isLoading}
-            triggerVariant="default"
-            triggerSize="default"
           />
         ) : null}
       </div>
@@ -341,7 +243,6 @@ export function Collaborators({
     addCollaboratorAction,
     addCollaboratorState,
     collaborators.length,
-    emails,
     error,
     inviteDialogOpen,
     isLoading,
@@ -445,13 +346,13 @@ export function Collaborators({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      onClick={() => void handleResendInvite(collaborator.id)}
+                      onClick={() => setResetId(collaborator.id)}
                       disabled={
                         removing.includes(collaborator.id) ||
                         resending.includes(collaborator.id)
                       }
                     >
-                      Resend invitation
+                      Reset password
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -480,8 +381,8 @@ export function Collaborators({
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will remove access to &quot;{owner}/{repo}&quot; for
-                  &quot;{collaboratorToRemove?.email}&quot;.
+                  &quot;{collaboratorToRemove?.email}&quot; will no longer be
+                  able to sign in and edit this website.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -492,35 +393,41 @@ export function Collaborators({
                     void handleConfirmRemove(collaboratorToRemove.id);
                   }}
                 >
-                  Remove collaborator
+                  Remove login
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <ResetPasswordDialog
+            email={collaborators.find((c) => c.id === resetId)?.email ?? null}
+            open={resetId !== null}
+            onOpenChange={(open) => {
+              if (!open) setResetId(null);
+            }}
+            onSubmit={(password) =>
+              resetId === null ? Promise.resolve(false) : handleResetPassword(resetId, password)
+            }
+          />
         </>
       ) : (
         <div className="flex-1 flex items-center">
           <Empty>
             <EmptyHeader>
-              <EmptyTitle>No collaborators</EmptyTitle>
+              <EmptyTitle>No client logins yet</EmptyTitle>
               <EmptyDescription>
-                Invite collaborators to give them access to this repository.
+                Create a login so your client can sign in with an email and
+                password and edit this website.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <InviteCollaboratorsDialog
+              <CreateClientLoginDialog
                 owner={owner}
                 repo={repo}
                 state={addCollaboratorState}
                 action={addCollaboratorAction}
                 open={inviteDialogOpen}
                 onOpenChange={setInviteDialogOpen}
-                value={emails}
-                onValueChange={setEmails}
-                disabled={isLoading}
-                triggerLabel="Invite a collaborator"
-                triggerVariant="default"
-                triggerSize="default"
               />
             </EmptyContent>
           </Empty>
